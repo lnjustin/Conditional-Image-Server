@@ -63,20 +63,22 @@ mappings {
 
 def getImage() {
 	byte[] imageBytes = null
-    //log.debug "URL: ${inputConnector.currentValue("variable")}"
     def params = [
         uri: inputConnector.currentValue("variable"),
         headers: ["Accept": "image/jpeg"]
     ]
-    httpGet(params) { resp ->
-        if(resp?.data != null) {
-            imageBytes = new byte[resp?.data.available()]
-            resp?.data.read(imageBytes)
+    try {
+        httpGet(params) { resp ->
+            if(resp?.data != null) {
+                imageBytes = new byte[resp?.data.available()]
+                resp?.data.read(imageBytes)
+            }
+            else {
+                log.error "Null Response"
+            }
         }
-        else {
-            log.error "Null Response"
-        }
+    } catch (exception) {
+        log.error "Conditional Image Server exception: ${exception.message}"
     }
-    log.debug imageBytes.size()
     render contentType: "image/jpeg", data: imageBytes, status: 200
 }
