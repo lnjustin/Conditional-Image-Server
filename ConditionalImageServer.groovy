@@ -15,6 +15,7 @@
  *  for the specific language governing permissions and limitations under the License.
  *
  * V1.0 - Initial Release
+ * V1.1 - Added SVG and PNG support; Added option to use custom device
 **/
 
 definition(
@@ -41,12 +42,16 @@ def settings(){
     def localUri = getFullLocalApiServerUrl() + "/conditionalImage?access_token=${state.accessToken}"
 
     return dynamicPage(name: "settings", title: "Settings", install: true){
-        section(getSectionTitle("Rule Machine Global Variable Connector")) {
-            input name: "inputConnector", type: "capability.actuator", title:	"Rule Machine Global Variable Connector for Image URL", multiple: false, required: true
+        section("Device Setup") {
+            input(name: "deviceTypeSelection", type: "enum", title: "Store URL in:", required: true, multiple: false, options: ["Custom Device", "Global Variable Connector"], submitOnChange: true, defaultValue: 'Custom Device', width: 5)
         }
-        
+        if (deviceTypeSelection == "Global Variable Connector") {
+            section(getSectionTitle("Rule Machine Global Variable Connector")) {
+                input name: "inputConnector", type: "capability.actuator", title:	"Rule Machine Global Variable Connector for Image URL", multiple: false, required: true
+            }
+        }
         section("") {
-            paragraph("<li>Configure different JPG image files at different URLs.</li><li>Use Rule Machine to set the selected Global Variable Connector to different URLs under different conditions.</li><li>The single URL below will dynamically serve the different JPGs under the different conditions.</li>")  
+            paragraph("" + ((deviceTypeSelection == "Custom Device") ? "<li>A Dynamic Image URL Device has been created</li>" : "") + "<li>Configure different JPG image files at different URLs.</li><li>Use Rule Machine to set the " + ((deviceTypeSelection == "Global Variable Connector") ? "selected Global Variable Connector" : "Dynamic Image URL Device") + " to different ones of the URLs under different conditions.</li><li>The single URL below will dynamically serve the different JPGs under the different conditions.</li>")  
             paragraph("<ul><li><strong>Local</strong>:<a href='${localUri}'>${localUri}</a></li></ul>")     
         }
 
@@ -61,11 +66,65 @@ mappings {
     path("/conditionalImage") { action: [ GET: "getImage"] }
 }
 
+def installed() {
+    initialize()
+}
+
+def initialize() {
+    deleteChild()
+    if (deviceTypeSelection == "Custom Device") {
+        createChild()
+    }
+}
+
+def updated()
+{
+    initialize()
+}
+
+def uninstalled()
+{
+    deleteChild()
+}
+
+def createChild()
+{
+
+    String childNetworkID = "DynamicImageUrlDevice${app.id}"
+    child = addChildDevice("lnjustin", "Dynamic Image URL Device", childNetworkID, [label:"Dynamic Image URL Device", isComponent:true, name:"Dynamic Image URL Device"])
+    child.updateSetting("parentID", app.id)
+}
+
+def deleteChild()
+{
+    deleteChildDevice("DynamicImageUrlDevice${app.id}")
+}
+    
+def getURLFromChild() {
+    String childNetworkID = "DynamicImageUrlDevice${app.id}"
+    def child = getChildDevice(childNetworkID)
+    if (child) {
+        def imageURL = child.getImageURL() 
+        return imageURL
+    }
+    log.error "No Child Device Found"
+    return null
+}
+
 def getImage() {
 	byte[] imageBytes = null
+    String imageURL = ""
+    
+    if (deviceTypeSelection == "Custom Device") {
+        imageURL = getURLFromChild()
+    }
+    else if (deviceTypeSelection == "Global Variable Connector") {
+        imageURL = inputConnector?.currentValue("variable")
+    }
+    
     def params = [
-        uri: inputConnector.currentValue("variable"),
-        headers: ["Accept": "image/jpeg"]
+        uri: imageURL,
+        headers: ["Accept": "image/jpeg; image/svg+xml; image/png"]
     ]
     try {
         httpGet(params) { resp ->
@@ -80,5 +139,20 @@ def getImage() {
     } catch (exception) {
         log.error "Conditional Image Server exception: ${exception.message}"
     }
-    render contentType: "image/jpeg", data: imageBytes, status: 200
+
+    String extension = "";
+    int i = imageURL.lastIndexOf('.');
+    if (i > 0) {
+        extension = imageURL.substring(i+1).toLowerCase()
+    }
+    
+    if (extension == "svg") {
+        render contentType: "image/svg+xml", data: imageBytes, status: 200
+    }
+    else if (extension == "jpg" || extension == "jpeg") {
+         render contentType: "image/jpeg", data: imageBytes, status: 200
+    }
+    else if (extension == "png") {
+         render contentType: "image/png", data: imageBytes, status: 200
+    }
 }
