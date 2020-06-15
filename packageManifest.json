@@ -1,0 +1,26 @@
+{
+  "packageName": "Conditional Image Server",
+  "author": "Justin Leonard",
+  "version": "1.1",
+  "minimumHEVersion": "1.1",
+  "dateReleased": "2019-06-14",
+  "apps": [
+    {
+      "id": "06b4419b-c7f0-4ddb-b8a8-893e104633cb",
+      "name": "Conditional Image Server",
+      "namespace": "lnjustin",
+      "location": "https://raw.githubusercontent.com/lnjustin/Conditional-Image-Server/master/ConditionalImageServer.groovy",
+      "required": true,
+      "oauth": true
+    }
+  ],
+  "drivers": [
+    {
+      "id": "4f1f2b87-0b7a-4638-940d-970764b09db3",
+      "name": "Dynamic Image URL Device",
+      "namespace": "lnjustin",
+      "location": "https://raw.githubusercontent.com/lnjustin/Conditional-Image-Server/master/DynamicImageURLDevice.groovy",
+      "required": true
+    }
+  ]
+}
