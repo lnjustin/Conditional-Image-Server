@@ -1,9 +1,9 @@
 {
   "packageName": "Conditional Image Server",
   "author": "Justin Leonard",
-  "version": "1.1",
-  "minimumHEVersion": "1.1",
-  "dateReleased": "2019-06-14",
+  "version": "1.2",
+  "minimumHEVersion": "1.2",
+  "dateReleased": "2019-07-13",
   "apps": [
     {
       "id": "06b4419b-c7f0-4ddb-b8a8-893e104633cb",
