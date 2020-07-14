@@ -16,6 +16,7 @@
  *
  * V1.0 - Initial Release
  * V1.1 - Added SVG and PNG support; Added option to use custom device
+ * V1.2 - Added GIF support
 **/
 
 definition(
@@ -101,11 +102,9 @@ def deleteChild()
 }
     
 def getURLFromChild() {
-    String childNetworkID = "DynamicImageUrlDevice${app.id}"
-    def child = getChildDevice(childNetworkID)
+    def child = getChildDevice("DynamicImageUrlDevice${app.id}")
     if (child) {
-        def imageURL = child.getImageURL() 
-        return imageURL
+        return child.getImageURL() 
     }
     log.error "No Child Device Found"
     return null
@@ -124,7 +123,7 @@ def getImage() {
     
     def params = [
         uri: imageURL,
-        headers: ["Accept": "image/jpeg; image/svg+xml; image/png"]
+        headers: ["Accept": "image/jpeg; image/svg+xml; image/png; image/gif"]
     ]
     try {
         httpGet(params) { resp ->
@@ -146,13 +145,18 @@ def getImage() {
         extension = imageURL.substring(i+1).toLowerCase()
     }
     
+    def contentTypeString = null    
     if (extension == "svg") {
-        render contentType: "image/svg+xml", data: imageBytes, status: 200
+        contentTypeString = "image/svg+xml"
     }
     else if (extension == "jpg" || extension == "jpeg") {
-         render contentType: "image/jpeg", data: imageBytes, status: 200
+        contentTypeString = "image/jpeg"
     }
     else if (extension == "png") {
-         render contentType: "image/png", data: imageBytes, status: 200
+         contentTypeString = "image/png"
     }
+    else if (extension == "gif") {
+         contentTypeString = "image/gif"
+    }
+    render contentType: contentTypeString, data: imageBytes, status: 200
 }
