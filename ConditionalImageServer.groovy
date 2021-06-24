@@ -17,6 +17,7 @@
  * V1.0 - Initial Release
  * V1.1 - Added SVG and PNG support; Added option to use custom device
  * V1.2 - Added GIF support
+ * V1.3 - Added JPG fallback for unknown file extensions
 **/
 
 definition(
@@ -157,6 +158,10 @@ def getImage() {
     }
     else if (extension == "gif") {
          contentTypeString = "image/gif"
+    }
+    else {
+        log.warn "Unknown file type with extension of: ${extension}. Will try to render as jpg."
+        contentTypeString = "image/jpeg"
     }
     render contentType: contentTypeString, data: imageBytes, status: 200
 }
